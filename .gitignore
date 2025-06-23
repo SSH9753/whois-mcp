@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 환경 변수 파일
+.env
+*.env
+
+# IDE/에디터
+.vscode/
+.idea/
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 로그/임시 파일
+*.log 
