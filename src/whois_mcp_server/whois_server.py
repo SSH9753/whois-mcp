@@ -11,6 +11,9 @@ from typing import Any, Dict, List, Optional
 from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # FastMCP 인스턴스 생성
 mcp = FastMCP("Whois Analysis Server")
@@ -84,9 +87,12 @@ async def lookup_whois(query: str, service_key: str = None) -> Dict[str, Any]:
                 "error": "API 서비스 키가 필요합니다."
             }
         
+        # 쿼리 유형 판별 (IP or 도메인)
+        is_ip = is_ip_address(query)
+        
         # whois 정보 조회
         async with httpx.AsyncClient(timeout=10.0) as client:
-            whois_data = await query_whois_api(client, query, api_key)
+            whois_data = await query_whois_api(client, query, api_key, is_ip)
             
         return {
             "query": query,
@@ -165,9 +171,9 @@ async def process_batch(batch: List[str]) -> List[Dict[str, Any]]:
     tasks = [lookup_whois(item) for item in batch]
     return await asyncio.gather(*tasks, return_exceptions=True)
 
-async def query_whois_api(client: httpx.AsyncClient, query: str, service_key: str) -> Dict[str, Any]:
+async def query_whois_api(client: httpx.AsyncClient, query: str, service_key: str, is_ip: bool = False) -> Dict[str, Any]:
     """
-    whois API 호출
+    whois API 호출 (IP/도메인에 따라 엔드포인트 및 파싱 분기)
     """
     try:
         params = {
@@ -176,13 +182,21 @@ async def query_whois_api(client: httpx.AsyncClient, query: str, service_key: st
             "answer": "xml"
         }
         
+        if is_ip:
+            url = "http://apis.data.go.kr/B551505/whois/ip_address"
+        else:
+            url = "http://apis.data.go.kr/B551505/whois/domain_name"
+        
         response = await client.get(
-            "http://apis.data.go.kr/B551505/whois/domain_name",
+            url,
             params=params
         )
         
         if response.status_code == 200:
-            return parse_whois_xml(response.text, query)
+            if is_ip:
+                return parse_ip_whois_xml(response.text, query)
+            else:
+                return parse_domain_whois_xml(response.text, query)
         else:
             return {
                 "error": f"API 호출 실패: HTTP {response.status_code}",
@@ -196,12 +210,11 @@ async def query_whois_api(client: httpx.AsyncClient, query: str, service_key: st
             "query": query
         }
 
-def parse_whois_xml(xml_content: str, query: str) -> Dict[str, Any]:
+def parse_domain_whois_xml(xml_content: str, query: str) -> Dict[str, Any]:
     """
-    whois API XML 응답 파싱
+    도메인용 whois API XML 응답 파싱
     """
     import xml.etree.ElementTree as ET
-    
     try:
         root = ET.fromstring(xml_content)
         krdomain = root.find('./whois/krdomain')
@@ -243,6 +256,52 @@ def parse_whois_xml(xml_content: str, query: str) -> Dict[str, Any]:
             "error": f"XML 파싱 오류: {str(e)}",
             "query": query
         }
+
+def parse_ip_whois_xml(xml_content: str, query: str) -> dict:
+    """
+    IP용 whois API XML 응답 파싱
+    """
+    import xml.etree.ElementTree as ET
+    try:
+        root = ET.fromstring(xml_content)
+        whois_elem = root.find('./whois')
+        if whois_elem is None:
+            return {"error": "whois 태그를 찾을 수 없습니다.", "query": query}
+
+        result = {
+            "query": whois_elem.findtext('query'),
+            "queryType": whois_elem.findtext('queryType'),
+            "registry": whois_elem.findtext('registry'),
+            "countryCode": whois_elem.findtext('countryCode'),
+        }
+
+        # 한글 ISP
+        for child in whois_elem.findall('./korean/ISP/netInfo/*'):
+            result[f"korean_ISP_{child.tag}"] = child.text
+        for child in whois_elem.findall('./korean/ISP/techContact/*'):
+            result[f"korean_ISP_contact_{child.tag}"] = child.text
+
+        # 한글 user
+        for child in whois_elem.findall('./korean/user/netInfo/*'):
+            result[f"korean_user_{child.tag}"] = child.text
+        for child in whois_elem.findall('./korean/user/techContact/*'):
+            result[f"korean_user_contact_{child.tag}"] = child.text
+
+        # 영문 ISP
+        for child in whois_elem.findall('./english/ISP/netInfo/*'):
+            result[f"english_ISP_{child.tag}"] = child.text
+        for child in whois_elem.findall('./english/ISP/techContact/*'):
+            result[f"english_ISP_contact_{child.tag}"] = child.text
+
+        # 영문 user
+        for child in whois_elem.findall('./english/user/netInfo/*'):
+            result[f"english_user_{child.tag}"] = child.text
+        for child in whois_elem.findall('./english/user/techContact/*'):
+            result[f"english_user_contact_{child.tag}"] = child.text
+
+        return result
+    except ET.ParseError as e:
+        return {"error": f"XML 파싱 오류: {str(e)}", "query": query}
 
 @mcp.tool()
 async def save_results_to_csv(results: List[Dict[str, Any]], output_file: str) -> Dict[str, Any]:
@@ -366,10 +425,17 @@ def get_xml_text(root, tag_name: str) -> Optional[str]:
     element = root.find(tag_name)
     return element.text if element is not None else None
 
-# 서버 실행 함수
+def is_ip_address(value: str) -> bool:
+    """입력값이 IPv4 또는 IPv6 주소인지 판별"""
+    import ipaddress
+    try:
+        ipaddress.ip_address(value)
+        return True
+    except ValueError:
+        return False
+
 def main():
-    """MCP 서버 실행"""
-    print("🔍 Whois Analysis MCP Server 시작")
+    print("Whois Analysis MCP Server 시작")
     mcp.run()
 
 if __name__ == "__main__":
