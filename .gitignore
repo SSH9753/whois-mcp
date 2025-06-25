@@ -1,11 +1,18 @@
-# Python
+# Python 가상환경
+.venv/
+
+# Python 캐시/빌드
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+build/
+dist/
+*.egg-info/
 
-# 환경 변수 파일
+# 환경설정/민감정보
 .env
-*.env
+.env.*
 
 # IDE/에디터
 .vscode/
