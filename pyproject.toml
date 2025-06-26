@@ -28,16 +28,16 @@ where = ["src"]
 #{
 #  "mcpServers": {
 #    "whois": {
-        "command": "uv",
-        "args": [
-          "--directory",
-          "path/to/whois-mcp",
-          "run",
-          "whois-mcp"
-        ],
-        "env": {
-            "WHOIS_SERVICE_KEY": "your_api_service_key_here"
-        }
-      }
+#        "command": "uv",
+#        "args": [
+#          "--directory",
+#          "path/to/whois-mcp",
+#          "run",
+#          "whois-mcp"
+#        ],
+#        "env": {
+#            "WHOIS_SERVICE_KEY": "your_api_service_key_here"
+#        }
+#      }
 #  }
 #}
