@@ -19,6 +19,12 @@ from .conftest import DOMAIN_NOT_FOUND, DOMAIN_OK, GATEWAY_KEY_ERROR, IP_OK
     [
         ("kisa.or.kr", "domain", "kisa.or.kr"),
         ("hxxps://evil-login[.]co[.]kr/path?a=1", "domain", "evil-login.co.kr"),
+        ("hxxps://www.kisa[.]or[.]kr/main", "domain", "kisa.or.kr"),
+        ("login.secure.example.kr", "domain", "example.kr"),
+        ("a.b.shop.seoul.kr", "domain", "shop.seoul.kr"),
+        ("app.startup.ai.kr", "domain", "startup.ai.kr"),
+        ("www.한국인터넷진흥원.한국", "domain", "한국인터넷진흥원.한국"),
+        ("co.kr", "invalid", "co.kr"),
         ("KISA.OR.KR.", "domain", "kisa.or.kr"),
         ("example.kr:8443/login", "domain", "example.kr"),
         ("한국인터넷진흥원.한국", "domain", "한국인터넷진흥원.한국"),
@@ -43,8 +49,8 @@ def test_normalize_kr_only_off():
 
 
 def test_dedupe():
-    items, dup = dedupe([normalize(x) for x in ["a.kr", "A.KR", "hxxp://a[.]kr", "b.kr", "bad", "bad"]])
-    assert dup == 2
+    items, dup = dedupe([normalize(x) for x in ["a.kr", "A.KR", "hxxp://a[.]kr", "www.a.kr", "b.kr", "bad", "bad"]])
+    assert dup == 3
     assert [q.value for q in items if q.kind == "domain"] == ["a.kr", "b.kr"]
     assert sum(q.kind == "invalid" for q in items) == 2  # 오류 항목은 제거하지 않음
 
