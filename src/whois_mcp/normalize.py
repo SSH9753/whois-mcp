@@ -13,6 +13,15 @@ Kind = Literal["domain", "ip", "invalid", "skipped"]
 # KISA 후이즈는 국가도메인(.kr, .한국)만 다룬다. xn--3e0b707e 는 '.한국'의 퓨니코드.
 KR_SUFFIXES = (".kr", ".한국", ".xn--3e0b707e")
 
+# .kr 의 2단계 도메인(Public Suffix List 'kr' 섹션 기준). 이 아래에 등록된 이름은 3단계가 등록 단위다.
+# KISA 후이즈 API는 서브도메인(www.kisa.or.kr)을 'code=031 질의 내용 부정확'으로 거부하므로(실측)
+# 등록 도메인 단위로 잘라서 조회한다.
+KR_SLDS = frozenset(
+    """ac ai co es go hs io it kg me mil ms ne or pe re sc
+    busan chungbuk chungnam daegu daejeon gangwon gwangju gyeongbuk gyeonggi
+    gyeongnam incheon jeju jeonbuk jeonnam seoul ulsan""".split()
+)
+
 _DEFANG = [
     (re.compile(r"\[\s*\.\s*\]|\(\s*\.\s*\)|\{\s*\.\s*\}|\[dot\]|\(dot\)", re.I), "."),
     (re.compile(r"\[\s*:\s*\]"), ":"),
@@ -81,7 +90,19 @@ def normalize(raw: str, *, kr_only: bool = True) -> NormalizedQuery:
     if kr_only and not host.endswith(KR_SUFFIXES):
         return NormalizedQuery(raw, host, "skipped", "국가도메인(.kr/.한국) 아님 — KISA 후이즈 조회 대상 외")
 
-    return NormalizedQuery(raw, host, "domain")
+    labels_kr = host.split(".")
+    if labels_kr[-1] == "kr" and len(labels_kr) == 2 and labels_kr[0] in KR_SLDS:
+        return NormalizedQuery(raw, host, "invalid", "2단계 도메인 자체(co.kr 등)는 조회 대상 아님")
+
+    return NormalizedQuery(raw, registered_domain(host), "domain")
+
+
+def registered_domain(host: str) -> str:
+    """www.login.example.co.kr → example.co.kr, sub.example.kr → example.kr, a.b.한국 → b.한국"""
+    labels = host.split(".")
+    if labels[-1] == "kr" and len(labels) >= 3 and labels[-2] in KR_SLDS:
+        return ".".join(labels[-3:])
+    return ".".join(labels[-2:])
 
 
 def dedupe(items: list[NormalizedQuery]) -> tuple[list[NormalizedQuery], int]:
