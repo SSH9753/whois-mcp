@@ -2,8 +2,7 @@
 
 KISA 후이즈 검색 API(공공데이터포털)를 사용해 **국가도메인(.kr / .한국)과 IP 주소의 WHOIS 정보**를 조회하는 MCP 서버입니다.
 
-> ⚠️ **비공식 개인 도구**입니다. 한국인터넷진흥원(KISA)이 배포하거나 보증하는 프로그램이 아니며,
-> 공공데이터포털에 공개된 KISA 후이즈 API를 호출할 뿐입니다. API 인증키는 각자 발급받아 사용하세요.
+
 
 ## 기능
 
@@ -95,14 +94,6 @@ Claude Desktop을 재시작하면 처음 실행할 때 uv가 의존성을 설치
 
 공공데이터포털 API에는 계정별 일일 트래픽 한도가 있습니다. 대량 조회 전에 `whois_preview_file` 로 호출 수를 확인하세요.
 
-## v0.1 에서 바뀐 점
-
-- 도구 이름: `lookup_whois` → `whois_lookup`, `bulk_whois_lookup` → `whois_bulk_lookup`
-- `load_list_from_file`, `save_results_to_csv/txt` 는 `whois_preview_file`, `whois_bulk_lookup_file` 로 통합되었습니다. 대량 결과를 대화로 주고받지 않습니다.
-- 도구 인자로 인증키를 받지 않습니다. 환경변수로만 설정합니다.
-- 결과 필드명을 정리했습니다. 예: `regName` → `registrant`, `agency` → `registrar`, `ns1` → `nameservers`. 날짜는 `YYYY-MM-DD` 형식입니다.
-- MCP Python SDK v2 기반으로 바뀌었습니다. 이전 코드는 현재 SDK 버전으로 새로 설치하면 import 단계에서 실패합니다.
-- 실행 명령(`whois-mcp`)은 그대로라 기존 Claude Desktop 설정을 바꿀 필요가 없습니다.
 
 ## 개발
 
