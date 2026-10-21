@@ -25,3 +25,6 @@ Thumbs.db
 
 # 로그/임시 파일
 *.log 
+# 빌드/번들 산출물
+*.mcpb
+.pytest_cache/
