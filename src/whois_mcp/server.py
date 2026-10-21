@@ -52,7 +52,7 @@ mcp = MCPServer(
         "KISA(한국인터넷진흥원) 후이즈 API로 국가도메인(.kr/.한국)과 IP 주소의 등록정보를 조회한다. "
         "1~수십 건은 whois_lookup / whois_bulk_lookup, 수백 건 이상이나 파일 목록은 "
         "whois_preview_file로 먼저 건수를 확인한 뒤 whois_bulk_lookup_file로 서버 측에서 처리하라. "
-        "입력의 디팽(hxxp, [.]), URL 형태는 자동 정규화된다. .kr 이 아닌 도메인은 조회하지 않고 skipped 처리된다."
+        "입력의 디팽(hxxp, [.]), URL 형태는 자동 정규화되고 서브도메인은 등록 도메인(예: www.a.co.kr → a.co.kr)으로 잘려 조회된다. .kr 이 아닌 도메인은 조회하지 않고 skipped 처리된다."
     ),
     lifespan=lifespan,
 )
