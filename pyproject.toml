@@ -1,43 +1,39 @@
-# pyproject.toml
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
 
 [project]
 name = "whois-mcp"
-version = "0.1.0"
-description = "Korean Whois MCP Server for domain lookup using official API"
-authors = [{name = "Your Name", email = "your.email@example.com"}]
-license = {text = "MIT"}
+version = "0.2.0"
+description = "Unofficial MCP server for .kr domain / IP WHOIS lookups via the KISA WHOIS API (data.go.kr)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "SSH9753" }]
+requires-python = ">=3.10"
+keywords = ["mcp", "whois", "krnic", "threat-intelligence"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+    "Topic :: Internet :: Name Service (DNS)",
+]
 dependencies = [
-    "fastmcp>=0.9.0",
-    "httpx>=0.25.0",
-    "python-dotenv>=1.0.0"
+    "mcp>=2.3,<3",
+    "httpx>=0.27",
 ]
 
+[project.urls]
+Repository = "https://github.com/SSH9753/whois-mcp"
+
 [project.scripts]
-whois-mcp = "whois_mcp_server:main"
+whois-mcp = "whois_mcp:main"
 
-[tool.setuptools]
-package-dir = {"" = "src"}
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.24"]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/whois_mcp"]
 
-# Claude Desktop 설정 (claude_desktop_config.json)
-#{
-#  "mcpServers": {
-#    "whois": {
-#        "command": "uv",
-#        "args": [
-#          "--directory",
-#          "path/to/whois-mcp",
-#          "run",
-#          "whois-mcp"
-#        ],
-#        "env": {
-#            "WHOIS_SERVICE_KEY": "your_api_service_key_here"
-#        }
-#      }
-#  }
-#}
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
